@@ -197,7 +197,7 @@ public class Model extends Observable {
         for (int i = 0; i < b.size(); i++) {
             for (int j = 0; j < b.size(); j++) {
                 Tile tile = b.tile(i, j);
-                if (tile != null&&tile.value() == MAX_PIECE) {
+                if (tile != null && tile.value() == MAX_PIECE) {
                     return true;
                 }
             }
@@ -211,8 +211,35 @@ public class Model extends Observable {
      * 1. There is at least one empty space on the board.
      * 2. There are two adjacent tiles with the same value.
      */
+    private static boolean isInArr(int length, int row, int col) {
+        return row >= 0
+                && row < length
+                && col >= 0
+                && col < length;
+    }
+
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null) {
+                    continue;
+                } else {
+                    if (isInArr(b.size(), i - 1, j) && b.tile(i, j).value() == b.tile(i - 1, j).value()) {
+                        return true;
+                    }
+                    if (isInArr(b.size(), i + 1, j) && b.tile(i, j).value() == b.tile(i + 1, j).value()) {
+                        return true;
+                    }
+                    if (isInArr(b.size(), i, j - 1) && b.tile(i, j).value() == b.tile(i, j - 1).value()) {
+                        return true;
+                    }
+                    if (isInArr(b.size(), i, j + 1) && b.tile(i, j).value() == b.tile(i, j + 1).value()) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
