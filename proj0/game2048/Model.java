@@ -170,7 +170,6 @@ public class Model extends Observable {
             }
         }
 
-
         board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
@@ -201,16 +200,14 @@ public class Model extends Observable {
      */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
-        boolean isEmpty = false;
         for (int i = 0; i < b.size(); i++) {
             for (int j = 0; j < b.size(); j++) {
                 if (b.tile(i, j) == null) {
-                    isEmpty = true;
-                    break;
+                    return true;
                 }
             }
         }
-        return isEmpty;
+        return false;
     }
 
     /**
