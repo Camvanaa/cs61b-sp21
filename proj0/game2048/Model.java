@@ -157,8 +157,8 @@ public class Model extends Observable {
                         break;
                     }
                     if (board.tile(col, row).value() == board.tile(col, p).value()
-                        && p < lock
-                        && (tile(col, p-1) == null || p - 1 == row)) {
+                            && p < lock
+                            && (tile(col, p - 1) == null || p - 1 == row)) {
                         board.move(col, p, tile(col, row));
                         score += board.tile(col, p).value();
                         lock = p;
@@ -243,23 +243,18 @@ public class Model extends Observable {
 
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) {
+            return true;
+        }
         for (int i = 0; i < b.size(); i++) {
             for (int j = 0; j < b.size(); j++) {
-                if (b.tile(i, j) == null) {
+                if (isInArr(b.size(), i - 1, j)
+                        && b.tile(i, j).value() == b.tile(i - 1, j).value()) {
                     return true;
-                } else {
-                    if (isInArr(b.size(), i - 1, j) && b.tile(i - 1, j) != null && b.tile(i, j).value() == b.tile(i - 1, j).value()) {
-                        return true;
-                    }
-                    if (isInArr(b.size(), i + 1, j) && b.tile(i + 1, j) != null && b.tile(i, j).value() == b.tile(i + 1, j).value()) {
-                        return true;
-                    }
-                    if (isInArr(b.size(), i, j - 1) && b.tile(i, j - 1) != null && b.tile(i, j).value() == b.tile(i, j - 1).value()) {
-                        return true;
-                    }
-                    if (isInArr(b.size(), i, j + 1) && b.tile(i, j + 1) != null && b.tile(i, j).value() == b.tile(i, j + 1).value()) {
-                        return true;
-                    }
+                }
+                if (isInArr(b.size(), i, j + 1)
+                        && b.tile(i, j).value() == b.tile(i, j + 1).value()) {
+                    return true;
                 }
             }
         }
