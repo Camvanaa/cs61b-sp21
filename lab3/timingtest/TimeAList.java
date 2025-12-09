@@ -23,5 +23,18 @@ public class TimeAList {
 
     public static void timeAListConstruction() {
         // TODO: YOUR CODE HERE
+        int[] tests = {1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000};
+        AList<Integer> Ns = new AList<>();
+        AList<Double> times = new AList<>();
+        for (int i = 0; i < tests.length; i += 1) {
+            AList<Integer> temps = new AList<>();
+            Stopwatch timer = new Stopwatch();
+            Ns.addLast(tests[i]);
+            for (int j = 0; j < tests[i]; j += 1) {
+                temps.addLast(1);
+            }
+            times.addLast(timer.elapsedTime());
+        }
+        printTimingTable(Ns, times, Ns);
     }
 }
