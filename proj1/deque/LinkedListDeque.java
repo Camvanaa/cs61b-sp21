@@ -26,14 +26,16 @@ public class LinkedListDeque<T> {
     }
 
     public void addFirst(T item) {
-        head.next = new Node<T>(item, head.next, head);
-        head.next.prev = head;
+        Node<T> newNode = new Node<>(item, head.next, head);
+        head.next.prev = newNode;
+        head.next = newNode;
         size++;
     }
 
     public void addLast(T item) {
-        tail.prev = new Node<T>(item, tail, tail.prev);
-        tail.prev.next = tail;
+        Node<T> newNode = new Node<>(item, tail, tail.prev);
+        tail.prev.next = newNode;
+        tail.prev = newNode;
         size++;
     }
 
@@ -47,7 +49,7 @@ public class LinkedListDeque<T> {
 
     public void printDeque() {
         Node<T> p = head.next;
-        while (p != null) {
+        while (p != tail) {
             System.out.print(p.item + " ");
             p = p.next;
         }
@@ -77,7 +79,7 @@ public class LinkedListDeque<T> {
     }
 
     public T get(int index) {
-        if (index < 0 || index >= size) {
+        if (index < 0 || index >= size || isEmpty()) {
             return null;
         }
         Node<T> p = head.next;
@@ -90,20 +92,24 @@ public class LinkedListDeque<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof LinkedListDeque)) return false;
-        LinkedListDeque<T> other = (LinkedListDeque<T>) o;
+
+        LinkedListDeque<?> other = (LinkedListDeque<?>) o;
         if (this.size() != other.size()) return false;
-        Node<T> p1 = head.next;
-        Node<T> p2 = other.head.next;
-        for (int i = 0; i < this.size(); i++) {
-            if (p1.item != p2.item) {
-                return false;
+
+        Node<T> p1 = this.head.next;
+        Node<?> p2 = other.head.next;
+
+        while (p1 != this.tail) {
+            if (p1.item == null) {
+                if (p2.item != null) return false;
+            } else {
+                if (!p1.item.equals(p2.item)) return false;
             }
             p1 = p1.next;
             p2 = p2.next;
         }
         return true;
     }
-
 
 
 }
