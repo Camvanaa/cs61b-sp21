@@ -1,8 +1,6 @@
-package gitlet;
+package gitlet.models;
 
 // TODO: any imports you need here
-
-import java.util.Date; // TODO: You'll likely use this in this class
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class

@@ -35,7 +35,7 @@ LIB = ../../library-sp21/javalib/*
 CPATH = "$(LIB):..:$(CLASSPATH):;$(LIB);..;$(CLASSPATH)"
 
 # All .java files in this directory.
-SRCS := $(wildcard *.java)
+SRCS := $(wildcard *.java) $(wildcard commands/*.java) $(wildcard models/*.java)
 
 .PHONY: default check clean
 
@@ -55,7 +55,8 @@ integration:
 
 # 'make clean' will clean up stuff you can reconstruct.
 clean:
-	$(RM) *~ *.class sentinel
+	find . -name "*.class" -exec $(RM) {} +
+	rm -f sentinel
 
 ### DEPENDENCIES ###
 
