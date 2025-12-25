@@ -35,7 +35,7 @@ public class Repository {
         HEADS_DIR.mkdir();
 
         /**
-        *TODO:以一个commi开始：
+        *TODO:以一个commit开始：
          *一个不包含任何文件，并且提交信息为 initial commit 的提交。
          *它将拥有一个单独的分支： master ，该分支最初指向这个初始提交，
          *而 master 将是当前分支。

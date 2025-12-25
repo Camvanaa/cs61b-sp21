@@ -1,6 +1,6 @@
 # Gitlet Design Document
 
-**Name**:
+**Name**: camvan
 
 ## Classes and Data Structures
 
