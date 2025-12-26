@@ -1,33 +1,26 @@
 package gitlet.models;
 
-// TODO: any imports you need here
+import gitlet.Repository;
 
+import java.io.File;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;
 
-/** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
- *  @author TODO
- */
-public class Commit {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Commit class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided one example for `message`.
-     */
+import static gitlet.Utils.*;
 
+public class Commit implements Serializable {
     /** The message of this Commit. */
-    private String message;
+    private final String message;
     /** The submit date of this Commit. */
     private Date timestamp;
     /** The parent of this Commit. */
-    private String parent;
+    private final String parent;
     /** fileName -> blob's SHA-1 */
     Map<String, String> blobs;
+
+
+    private  String id;
 
 
     public Commit(String message, String parent, Map<String, String> blobs) {
@@ -35,7 +28,30 @@ public class Commit {
         this.parent = parent;
         this.blobs = blobs;
         this.timestamp = new Date();
+        this.id = generateId();
     }
 
-    /* TODO: fill in the rest of this class. */
+    public void setTimestamp(Date date) {
+        this.timestamp = date;
+        this.id = generateId();
+    }
+
+    public void save() {
+        File commitFile = join(Repository.OBJECTS_DIR, id);
+        writeObject(commitFile, this);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    private String generateId() {
+        return sha1(message, timestamp.toString(),
+                (parent == null ? "" : parent),
+                blobs.toString());
+    }
+
+    public boolean isAdded(String sha1, String fileName) {
+        return blobs.containsKey(fileName) && blobs.get(fileName).equals(sha1);
+    }
 }
