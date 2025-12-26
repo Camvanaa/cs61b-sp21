@@ -2,6 +2,7 @@ package bstmap;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Stack;
 
 public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     private Node<K, V> root;
@@ -101,6 +102,8 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
             node.left = put(node.left, key, value);
         } else if (cmp > 0) {
             node.right = put(node.right, key, value);
+        } else {
+            node.value = value;
         }
         return node;
     }
@@ -109,7 +112,22 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
      * If you don't implement this, throw an UnsupportedOperationException. */
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        return new java.util.AbstractSet<>() {
+            @Override
+            public Iterator<K> iterator() {
+                return BSTMap.this.iterator();
+            }
+
+            @Override
+            public int size() {
+                return BSTMap.this.size;
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return BSTMap.this.containsKey((K) o);
+            }
+        };
     }
 
     /* Removes the mapping for the specified key from this map if present.
@@ -117,19 +135,105 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
      * UnsupportedOperationException. */
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        V targetValue = get(key);
+        if (targetValue != null) {
+            root = remove(root, key);
+            size--;
+        }
+        return targetValue;
     }
+
+    private Node<K, V> remove(Node<K, V> node, K key) {
+        if (node == null) return null;
+
+        int cmp = key.compareTo(node.key);
+        if (cmp < 0) {
+            node.left = remove(node.left, key);
+        } else if (cmp > 0) {
+            node.right = remove(node.right, key);
+        } else {
+            if (node.left == null) {
+                return node.right;
+            }
+            if (node.right == null) {
+                return node.left;
+            }
+
+            Node<K, V> t = node;
+            node = min(t.right);
+            node.right = deleteMin(t.right);
+            node.left = t.left;
+        }
+        return node;
+    }
+
+    private Node<K, V> min(Node<K, V> node) {
+        if (node.left == null) return node;
+        return min(node.left);
+    }
+
+    private Node<K, V> deleteMin(Node<K, V> node) {
+        if (node.left == null) return node.right;
+        node.left = deleteMin(node.left);
+        return node;
+    }
+
+
 
     /* Removes the entry for the specified key only if it is currently mapped to
      * the specified value. Not required for Lab 7. If you don't implement this,
      * throw an UnsupportedOperationException.*/
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        V targetValue = get(key);
+        if (targetValue == null || !targetValue.equals(value)) {
+            return null;
+        }
+        root = remove(root, key);
+        size--;
+        return targetValue;
     }
 
     @Override
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
+        return new BSTMapIterator();
+    }
+
+    private class BSTMapIterator implements Iterator<K> {
+        private final Stack<Node<K, V>> stack = new Stack<>();
+
+        public BSTMapIterator() {
+            pushLeftNodes(root);
+        }
+
+        private void pushLeftNodes(Node<K, V> curr) {
+            while (curr != null) {
+                stack.push(curr);
+                curr = curr.left;
+            }
+        }
+
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+
+        public K next() {
+            Node<K, V> curr = stack.pop();
+            pushLeftNodes(curr.right);
+            return curr.key;
+        }
+    }
+
+
+
+    public void printInOrderr() {
+        printInOrder(root);
+    }
+
+    private void printInOrder(Node<K, V> x) {
+        if (x == null) return;
+        printInOrder(x.left);
+        System.out.println(x.key);
+        printInOrder(x.right);
     }
 }

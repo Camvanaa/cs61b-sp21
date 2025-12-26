@@ -19,3 +19,7 @@
 20251217: proj1: Data Structures EC
 
 20251220: lab6
+
+20251226: lab7
+
+20251226: lab7 Optional Exercises
