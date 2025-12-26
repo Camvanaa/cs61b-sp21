@@ -1,4 +1,7 @@
 package gitlet.models;
 
-public class StagingArea {
+import java.io.Serializable;
+
+public class StagingArea implements Serializable {
+
 }

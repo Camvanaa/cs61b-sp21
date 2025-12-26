@@ -2,6 +2,9 @@ package gitlet.models;
 
 // TODO: any imports you need here
 
+import java.util.Date;
+import java.util.Map;
+
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
@@ -19,6 +22,20 @@ public class Commit {
 
     /** The message of this Commit. */
     private String message;
+    /** The submit date of this Commit. */
+    private Date timestamp;
+    /** The parent of this Commit. */
+    private String parent;
+    /** fileName -> blob's SHA-1 */
+    Map<String, String> blobs;
+
+
+    public Commit(String message, String parent, Map<String, String> blobs) {
+        this.message = message;
+        this.parent = parent;
+        this.blobs = blobs;
+        this.timestamp = new Date();
+    }
 
     /* TODO: fill in the rest of this class. */
 }
