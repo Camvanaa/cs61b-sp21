@@ -36,8 +36,6 @@ public class StagingArea implements Serializable {
         removed.remove(fileName);
     }
 
-
-
     public void stageForRemoval(String fileName) {
         removed.add(fileName);
     }

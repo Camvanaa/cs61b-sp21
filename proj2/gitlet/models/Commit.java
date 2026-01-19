@@ -16,6 +16,7 @@ public class Commit implements Serializable {
     private Date timestamp;
     /** The parent of this Commit. */
     private final String parent;
+    private final String parent2 = null;
     /** fileName -> blob's SHA-1 */
     Map<String, String> blobs;
 
@@ -45,6 +46,22 @@ public class Commit implements Serializable {
         return id;
     }
 
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public String getParent2() {
+        return parent2;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
     private String generateId() {
         return sha1(message, timestamp.toString(),
                 (parent == null ? "" : parent),
@@ -53,5 +70,9 @@ public class Commit implements Serializable {
 
     public boolean isAdded(String sha1, String fileName) {
         return blobs.containsKey(fileName) && blobs.get(fileName).equals(sha1);
+    }
+
+    public Map<String, String> getBlobs() {
+        return blobs;
     }
 }

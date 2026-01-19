@@ -16,6 +16,7 @@ public class AddCommand implements Command {
 
     @Override
     public void execute() {
+        hasDir();
         validateNumArgs(args, 2);
         if (!join(Repository.CWD, fileName).exists()) {
             System.out.println("File does not exist.");
