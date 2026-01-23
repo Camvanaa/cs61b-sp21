@@ -448,17 +448,23 @@ public class Repository {
             writeContents(join(CWD, entry.getKey()), (Object) b.getContent());
         }
 
-        for (String fileName : currentCommit.getBlobs().keySet()) {
-            if (!targetBlobs.containsKey(fileName)) {
-                restrictedDelete(join(CWD, fileName));
+        deleteFile(currentCommit, targetBlobs);
+
+        writeContents(HEAD_FILE, branchName);
+    }
+
+    private static void deleteFile(Commit currentCommit, Map<String, String> targetBlobs) {
+        if (currentCommit != null) {
+            for (String fileName : currentCommit.getBlobs().keySet()) {
+                if (!targetBlobs.containsKey(fileName)) {
+                    restrictedDelete(join(CWD, fileName));
+                }
             }
         }
 
         StagingArea index = StagingArea.load();
         index.clear();
         index.save();
-
-        writeContents(HEAD_FILE, branchName);
     }
 
     public static void branch(String branchName) {
@@ -486,7 +492,7 @@ public class Repository {
             System.exit(0);
         }
 
-        restrictedDelete(targetBranchFile);
+        targetBranchFile.delete();
     }
 
     public static void reset(String commitId) {
@@ -503,39 +509,12 @@ public class Repository {
         }
 
         Commit currentCommit = getHeadCommit();
-        if (currentCommit != null) {
-            for (String fileName : currentCommit.getBlobs().keySet()) {
-                if (!targetBlobs.containsKey(fileName)) {
-                    restrictedDelete(join(CWD, fileName));
-                }
-            }
-        }
-
-        StagingArea index = StagingArea.load();
-        index.clear();
-        index.save();
+        deleteFile(currentCommit, targetBlobs);
 
         String currentBranchName = readContentsAsString(HEAD_FILE);
         File branchFile = join(HEADS_DIR, currentBranchName);
         writeContents(branchFile, targetCommit.getId());
     }
-
-    private static Set<Commit> getBranchCommits(Commit headCommit) {
-        Set<Commit> commits = new HashSet<>();
-        Commit currentCommit = headCommit;
-        while (currentCommit != null) {
-            commits.add(currentCommit);
-
-            if (currentCommit.getParent() != null) {
-                String parentId = currentCommit.getParent();
-                currentCommit = readObject(join(OBJECTS_DIR, parentId), Commit.class);
-            } else {
-                currentCommit = null;
-            }
-        }
-        return commits;
-    }
-
 
     private static Set<String> getAncestorIds(Commit commit) {
         Set<String> ancestors = new HashSet<>();
@@ -558,128 +537,140 @@ public class Repository {
     }
 
     public static void merge(String branchName) {
-        Result mergeInit = getResult(branchName);
-        if (mergeInit == null) {
+        MergeContext ctx = setupMerge(branchName);
+        if (ctx == null) {
             return;
         }
 
-        Set<String> allFileNames = new HashSet<>();
-        allFileNames.addAll(mergeInit.currentCommit.getBlobs().keySet());
-        allFileNames.addAll(mergeInit.targetCommit.getBlobs().keySet());
-        allFileNames.addAll(mergeInit.splitCommit.getBlobs().keySet());
-
         boolean encounteredConflict = false;
 
-        for (String fileName : allFileNames) {
-            String spHash = mergeInit.splitCommit.getBlobs().get(fileName);
-            String currHash = mergeInit.currentCommit.getBlobs().get(fileName);
-            String givenHash = mergeInit.targetCommit.getBlobs().get(fileName);
-
-            boolean inSplit = spHash != null;
-            boolean inCurr = currHash != null;
-            boolean inGiven = givenHash != null;
-
-            if (inSplit && inCurr && inGiven && safeEquals(spHash, currHash)
-                    && !safeEquals(spHash, givenHash)) {
-                checkout2(mergeInit.targetCommitId, fileName);
-                mergeInit.index.add(fileName, givenHash);
-            } else if (inSplit && inCurr && inGiven && !safeEquals(spHash, currHash)
-                    && safeEquals(spHash, givenHash)) {
-                continue;
-            } else if (safeEquals(currHash, givenHash)) {
-                continue;
-            } else if (!inSplit && !inCurr) {
-                checkout2(mergeInit.targetCommitId, fileName);
-                mergeInit.index.add(fileName, givenHash);
-            } else if (!inSplit && !inGiven) {
-                continue;
-            } else if (inSplit && inCurr && !inGiven && safeEquals(spHash, currHash)) {
-                rm(fileName);
-            } else if (inSplit && !inCurr && safeEquals(spHash, givenHash)) {
-                continue;
-            } else {
+        for (String fileName : ctx.allFileNames) {
+            boolean conflict = processOneFile(fileName, ctx);
+            if (conflict) {
                 encounteredConflict = true;
-                handleConflict(fileName, currHash, givenHash, mergeInit.index);
             }
         }
 
-        mergeInit.index.save();
+        ctx.index.save();
+        String msg = "Merged " + branchName + " into " + ctx.currentBranchName + ".";
 
-        String msg = "Merged " + branchName + " into " + mergeInit.currentBranchName + ".";
-
-        commit(msg, mergeInit.targetCommitId);
+        commit(msg, ctx.targetCommitId);
 
         if (encounteredConflict) {
             System.out.println("Encountered a merge conflict.");
         }
-
     }
 
-    private static Result getResult(String branchName) {
+    private static boolean processOneFile(String fileName, MergeContext ctx) {
+        String spHash = ctx.splitCommit.getBlobs().get(fileName);
+        String currHash = ctx.currentCommit.getBlobs().get(fileName);
+        String givenHash = ctx.targetCommit.getBlobs().get(fileName);
+
+        boolean inSplit = spHash != null;
+        boolean inCurr = currHash != null;
+        boolean inGiven = givenHash != null;
+
+        if (inSplit && inCurr && inGiven && safeEquals(spHash, currHash)
+                && !safeEquals(spHash, givenHash)) {
+            checkout2(ctx.targetCommitId, fileName);
+            ctx.index.add(fileName, givenHash);
+        } else if (!inSplit && !inCurr && inGiven) {
+            checkout2(ctx.targetCommitId, fileName);
+            ctx.index.add(fileName, givenHash);
+        } else if (inSplit && inCurr && !inGiven && safeEquals(spHash, currHash)) {
+            ctx.index.stageForRemoval(fileName);
+            File f = join(CWD, fileName);
+            if (f.exists()) {
+                restrictedDelete(f);
+            }
+        } else if (!safeEquals(currHash, givenHash) && !(inSplit && inCurr && inGiven
+                && !safeEquals(spHash, currHash) && safeEquals(spHash, givenHash))
+                && !(inSplit && !inGiven) && !(inSplit && !inCurr
+                && safeEquals(spHash, givenHash))) {
+
+            handleConflict(fileName, currHash, givenHash, ctx.index);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static class MergeContext {
+        final StagingArea index;
+        final Commit currentCommit;
+        final String targetCommitId;
+        final Commit targetCommit;
+        final Commit splitCommit;
+        final String currentBranchName;
+        final Set<String> allFileNames;
+
+        MergeContext(StagingArea index, Commit curr, String tarId, Commit tar,
+                     Commit split, String currName) {
+            this.index = index;
+            this.currentCommit = curr;
+            this.targetCommitId = tarId;
+            this.targetCommit = tar;
+            this.splitCommit = split;
+            this.currentBranchName = currName;
+
+            this.allFileNames = new HashSet<>();
+            if (curr != null) {
+                this.allFileNames.addAll(curr.getBlobs().keySet());
+            }
+            if (tar != null) {
+                this.allFileNames.addAll(tar.getBlobs().keySet());
+            }
+            if (split != null) {
+                this.allFileNames.addAll(split.getBlobs().keySet());
+            }
+        }
+    }
+
+    // ==========================================
+    // 初始化方法：检查错误，找祖先 (原 getResult 重构)
+    // ==========================================
+    private static MergeContext setupMerge(String branchName) {
         StagingArea index = StagingArea.load();
         if (!index.isEmpty()) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
 
-        Commit currentCommit = getHeadCommit();
-
         File branchFile = join(HEADS_DIR, branchName);
         if (!branchFile.exists()) {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
-        String targetCommitId = readContentsAsString(branchFile);
 
-        Commit targetCommit = getCommit(targetCommitId);
         String currentBranchName = readContentsAsString(HEAD_FILE);
         if (branchName.equals(currentBranchName)) {
             System.out.println("Cannot merge a branch with itself.");
             System.exit(0);
         }
 
+        Commit currentCommit = getHeadCommit();
+        String targetCommitId = readContentsAsString(branchFile);
+        Commit targetCommit = getCommit(targetCommitId);
+
         hasUntracked(targetCommit);
 
+        // BFS 找 Split Point
         Set<String> currentAncestorIds = getAncestorIds(currentCommit);
-
         Commit splitCommit = getSpCommit(targetCommit, currentAncestorIds);
 
-        String splitCommitId = splitCommit.getId();
-        String currentCommitId = null;
-        if (currentCommit != null) {
-            currentCommitId = currentCommit.getId();
-        }
-
-        if (splitCommitId.equals(targetCommitId)) {
+        // Fast-forward 检查
+        if (splitCommit.getId().equals(targetCommitId)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return null;
         }
-        if (splitCommitId.equals(currentCommitId)) {
+        if (currentCommit != null && splitCommit.getId().equals(currentCommit.getId())) {
             checkout3(branchName);
             System.out.println("Current branch fast-forwarded.");
             return null;
         }
-        return new Result(index, currentCommit, targetCommitId,
-                targetCommit, currentBranchName, splitCommit);
-    }
 
-    private static class Result {
-        final StagingArea index;
-        final Commit currentCommit;
-        final String targetCommitId;
-        final Commit targetCommit;
-        final String currentBranchName;
-        final Commit splitCommit;
-
-        Result(StagingArea index, Commit currentCommit, String targetCommitId,
-               Commit targetCommit, String currentBranchName, Commit splitCommit) {
-            this.index = index;
-            this.currentCommit = currentCommit;
-            this.targetCommitId = targetCommitId;
-            this.targetCommit = targetCommit;
-            this.currentBranchName = currentBranchName;
-            this.splitCommit = splitCommit;
-        }
+        return new MergeContext(index, currentCommit, targetCommitId,
+                targetCommit, splitCommit, currentBranchName);
     }
 
     private static Commit getSpCommit(Commit targetCommit, Set<String> currentAncestorIds) {
