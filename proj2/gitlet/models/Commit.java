@@ -16,7 +16,7 @@ public class Commit implements Serializable {
     private Date timestamp;
     /** The parent of this Commit. */
     private final String parent;
-    private final String parent2 = null;
+    private final String parent2;
     /** fileName -> blob's SHA-1 */
     Map<String, String> blobs;
 
@@ -24,9 +24,10 @@ public class Commit implements Serializable {
     private  String id;
 
 
-    public Commit(String message, String parent, Map<String, String> blobs) {
+    public Commit(String message, String parent, String parent2, Map<String, String> blobs) {
         this.message = message;
         this.parent = parent;
+        this.parent2 = parent2;
         this.blobs = blobs;
         this.timestamp = new Date();
         this.id = generateId();

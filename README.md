@@ -23,3 +23,7 @@
 20251226: lab7
 
 20251226: lab7 Optional Exercises
+
+20260119: proj2: checkpoint
+
+20260123: proj2 Gitlet

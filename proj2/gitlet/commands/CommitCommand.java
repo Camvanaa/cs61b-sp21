@@ -17,6 +17,6 @@ public class CommitCommand implements Command {
             System.exit(0);
         }
         validateNumArgs(args, 2);
-        Repository.commit(args[1]);
+        Repository.commit(args[1], null);
     }
 }
