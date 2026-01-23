@@ -569,30 +569,40 @@ public class Repository {
         boolean inSplit = spHash != null;
         boolean inCurr = currHash != null;
         boolean inGiven = givenHash != null;
-
         if (inSplit && inCurr && inGiven && safeEquals(spHash, currHash)
                 && !safeEquals(spHash, givenHash)) {
             checkout2(ctx.targetCommitId, fileName);
             ctx.index.add(fileName, givenHash);
-        } else if (!inSplit && !inCurr && inGiven) {
+            return false;
+        }
+        if (!inSplit && !inCurr && inGiven) {
             checkout2(ctx.targetCommitId, fileName);
             ctx.index.add(fileName, givenHash);
-        } else if (inSplit && inCurr && !inGiven && safeEquals(spHash, currHash)) {
+            return false;
+        }
+        if (inSplit && inCurr && !inGiven && safeEquals(spHash, currHash)) {
             ctx.index.stageForRemoval(fileName);
             File f = join(CWD, fileName);
             if (f.exists()) {
                 restrictedDelete(f);
             }
-        } else if (!safeEquals(currHash, givenHash) && !(inSplit && inCurr && inGiven
-                && !safeEquals(spHash, currHash) && safeEquals(spHash, givenHash))
-                && !(inSplit && !inGiven) && !(inSplit && !inCurr
-                && safeEquals(spHash, givenHash))) {
-
-            handleConflict(fileName, currHash, givenHash, ctx.index);
-            return true;
+            return false;
         }
-
-        return false;
+        if (inSplit && inCurr && inGiven && !safeEquals(spHash, currHash)
+                && safeEquals(spHash, givenHash)) {
+            return false;
+        }
+        if (safeEquals(currHash, givenHash)) {
+            return false;
+        }
+        if (!inSplit && inCurr && !inGiven) {
+            return false;
+        }
+        if (inSplit && !inCurr && inGiven && safeEquals(spHash, givenHash)) {
+            return false;
+        }
+        handleConflict(fileName, currHash, givenHash, ctx.index);
+        return true;
     }
 
     private static class MergeContext {
