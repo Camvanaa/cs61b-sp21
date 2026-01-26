@@ -28,11 +28,11 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     /* Instance Variables */
     private Collection<Node>[] buckets;
     // You should probably define some more!
-    int size = 0;
-    int tableSize = 16;
-    double loadFactor = 0.75;
+    private int size = 0;
+    private int tableSize = 16;
+    private double loadFactor = 0.75;
 
-    HashSet<K> keySet = new HashSet<K>();
+    private HashSet<K> keySet = new HashSet<K>();
 
 
     /** Constructors */
@@ -103,7 +103,6 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         return new Collection[tableSize];
     }
 
-    // TODO: Implement the methods of the Map61B Interface below
     // Your code won't compile until you do so!
 
     @Override
